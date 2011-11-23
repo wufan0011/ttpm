@@ -389,11 +389,11 @@ int printBallotResult(struct playerInfo *p_playerInfo[],
     int k;
 
     /* print ballot result and write to file */
-    fp_swp = fopen(BALLOT_SWP_FILE_PATH, "w");
     printf("请输入本次抽签标识字串，比如 20111201 : ");
     scanf("%s", text);
     while (getchar() != '\n')
         ;
+    fp_swp = fopen(BALLOT_SWP_FILE_PATH, "w");
     fprintf(fp_swp, " %s ", text);
     fprintf(fp_swp, " %d", lines*(cols-1)/2);
     printf("抽签结果:\n");
@@ -405,8 +405,12 @@ int printBallotResult(struct playerInfo *p_playerInfo[],
             for (k = 0; k < playerNum; ++k)
                 if (p_playerInfo[k]->num == *(p_ballotArray + i*cols)) {
                     fprintf(fp_swp, " %d", p_playerInfo[k]->num);
-                    printf("(%c)%s", p_playerInfo[k]->level,
-                            p_playerInfo[k]->name);
+#if CUSTOM_PRINT_BALLOT_LEVEL
+                    printf("(%c)", customPrintBallotLevel(p_playerInfo, k));
+#else
+                    printf("(%c)", p_playerInfo[k]->level);
+#endif
+                    printf("%s", p_playerInfo[k]->name);
                     break;
                 }
             printf("    VS    ");
@@ -414,8 +418,12 @@ int printBallotResult(struct playerInfo *p_playerInfo[],
                 if (p_playerInfo[k]->num ==
                         *(p_ballotArray + anotherPlayerLine*cols)) {
                     fprintf(fp_swp, " %d", p_playerInfo[k]->num);
-                    printf("%s(%c)", p_playerInfo[k]->name,
-                            p_playerInfo[k]->level);
+                    printf("%s", p_playerInfo[k]->name);
+#if CUSTOM_PRINT_BALLOT_LEVEL
+                    printf("(%c)", customPrintBallotLevel(p_playerInfo, k));
+#else
+                    printf("(%c)", p_playerInfo[k]->level);
+#endif
                     break;
                 }
             printf("\n");
@@ -1278,4 +1286,23 @@ double defaultScore(int point, double rate)
 double customScore(int point, double rate)
 {
     return point * sqrt(rate);
+}
+
+
+
+char customPrintBallotLevel(struct playerInfo *p_playerInfo[], int index)
+{
+    struct oneGameInfo *p_tmp;
+    char level;
+
+    if (p_playerInfo[index]->p_oneGameInfo == NULL)
+        level = p_playerInfo[index]->level;
+    else {
+        p_tmp = p_playerInfo[index]->p_oneGameInfo;
+        while (p_tmp->next != NULL)
+            p_tmp = p_tmp->next;
+        level = p_tmp->levelBefore;
+    }
+
+    return level;
 }
